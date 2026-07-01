@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ControlPeso 💰 — Tu Asesor Financiero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash" class="splash">
+  <div class="splash-inner">
+    <div class="splash-logo">💰</div>
+    <h1 class="splash-title">ControlPeso</h1>
+    <p class="splash-sub">Tu asesor financiero personal</p>
+    <div class="splash-bar"><div class="splash-fill"></div></div>
+  </div>
+</div>
+
+<!-- ONBOARDING MODAL -->
+<div id="onboarding" class="modal-overlay hidden">
+  <div class="modal-box onboarding-box">
+    <div class="onboarding-step active" data-step="1">
+      <div class="ob-emoji">👋</div>
+      <h2>Hola, soy tu asesor</h2>
+      <p>Estoy aquí para ayudarte a salir de las deudas con un plan real, paso a paso. No hay juicio, solo soluciones.</p>
+      <button class="btn-primary" onclick="nextStep(2)">Comenzar →</button>
+    </div>
+    <div class="onboarding-step" data-step="2">
+      <div class="ob-emoji">💼</div>
+      <h2>¿Cómo te llamas?</h2>
+      <input type="text" id="ob-name" class="ob-input" placeholder="Tu nombre..." />
+      <button class="btn-primary" onclick="nextStep(3)">Continuar →</button>
+    </div>
+    <div class="onboarding-step" data-step="3">
+      <div class="ob-emoji">💵</div>
+      <h2>¿Cuánto ganas por quincena?</h2>
+      <p class="ob-hint">Ingreso base, sin extras</p>
+      <div class="ob-row">
+        <div class="ob-field">
+          <label>Quincena 1 (1–15)</label>
+          <input type="number" id="ob-q1" class="ob-input" placeholder="0" />
+        </div>
+        <div class="ob-field">
+          <label>Quincena 2 (16–30)</label>
+          <input type="number" id="ob-q2" class="ob-input" placeholder="0" />
+        </div>
+      </div>
+      <button class="btn-primary" onclick="nextStep(4)">Continuar →</button>
+    </div>
+    <div class="onboarding-step" data-step="4">
+      <div class="ob-emoji">🏠</div>
+      <h2>Gastos fijos mensuales</h2>
+      <p class="ob-hint">Los que NO puedes evitar</p>
+      <div id="ob-fixed-list">
+        <div class="ob-fixed-row">
+          <input type="text" class="ob-input ob-fx-name" placeholder="Ej: Arriendo" />
+          <input type="number" class="ob-input ob-fx-val" placeholder="Monto" />
+        </div>
+      </div>
+      <button class="btn-ghost" onclick="addFixedRow()">+ Agregar otro</button>
+      <button class="btn-primary" onclick="nextStep(5)">Continuar →</button>
+    </div>
+    <div class="onboarding-step" data-step="5">
+      <div class="ob-emoji">🎯</div>
+      <h2>¡Todo listo!</h2>
+      <p>Ahora agrega tus deudas y empieza a tomar el control. Tu asesor estará siempre aquí.</p>
+      <button class="btn-primary" onclick="finishOnboarding()">Ir al Dashboard 🚀</button>
+    </div>
+    <div class="ob-dots">
+      <span class="ob-dot active" data-s="1"></span>
+      <span class="ob-dot" data-s="2"></span>
+      <span class="ob-dot" data-s="3"></span>
+      <span class="ob-dot" data-s="4"></span>
+      <span class="ob-dot" data-s="5"></span>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app" class="app hidden">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">💰</span>
+      <span class="topbar-name">ControlPeso</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="openSection('config')" title="Configuración">⚙️</button>
+      <button class="icon-btn" onclick="toggleMoodModal()" title="¿Cómo me siento?">😊</button>
+      <button class="icon-btn notif-btn" onclick="openSection('alertas')" title="Alertas">
+        🔔<span class="notif-badge" id="notif-count">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- ════════════════════════════ DASHBOARD ════════════════════════════ -->
+    <section id="sec-dashboard" class="section active">
+
+      <!-- Saludo -->
+      <div class="greeting-bar">
+        <div>
+          <div class="greeting-text" id="greeting-text">Buenos días</div>
+          <div class="greeting-sub" id="greeting-sub">Aquí está tu resumen de hoy</div>
+        </div>
+        <div class="health-pill" id="health-pill">
+          <span id="health-score">--</span>/100
+        </div>
+      </div>
+
+      <!-- ASESOR CARD -->
+      <div class="asesor-card" id="asesor-card">
+        <div class="asesor-header">
+          <span class="asesor-avatar">🤖</span>
+          <div>
+            <div class="asesor-title">Tu Asesor Financiero</div>
+            <div class="asesor-subtitle" id="asesor-time">Actualizado ahora</div>
+          </div>
+          <div class="semaforo" id="semaforo-main">🔴</div>
+        </div>
+        <div class="asesor-msg" id="asesor-msg">
+          Calculando tu situación financiera...
+        </div>
+        <div class="asesor-actions" id="asesor-actions"></div>
+      </div>
+
+      <!-- DINERO ESTA QUINCENA -->
+      <div class="card-grid">
+        <div class="mini-card green">
+          <div class="mc-icon">💵</div>
+          <div class="mc-label">Ingresos</div>
+          <div class="mc-value" id="dash-income">$0</div>
+        </div>
+        <div class="mini-card red">
+          <div class="mc-icon">💳</div>
+          <div class="mc-label">Deuda Total</div>
+          <div class="mc-value" id="dash-total-debt">$0</div>
+        </div>
+        <div class="mini-card blue">
+          <div class="mc-icon">🆓</div>
+          <div class="mc-label">Disponible</div>
+          <div class="mc-value" id="dash-available">$0</div>
+        </div>
+        <div class="mini-card orange">
+          <div class="mc-icon">📅</div>
+          <div class="mc-label">Próximo Pago</div>
+          <div class="mc-value" id="dash-next-payment">--</div>
+        </div>
+      </div>
+
+      <!-- BARRA DE PROGRESO LIBERTAD -->
+      <div class="freedom-card">
+        <div class="freedom-header">
+          <span>🗺️ Camino a la Libertad Financiera</span>
+          <span class="freedom-months" id="freedom-months">-- meses</span>
+        </div>
+        <div class="freedom-bar-bg">
+          <div class="freedom-bar-fill" id="freedom-bar" style="width:0%"></div>
+        </div>
+        <div class="freedom-labels">
+          <span>Inicio</span>
+          <span id="freedom-pct">0%</span>
+          <span>🎊 Libertad</span>
+        </div>
+      </div>
+
+      <!-- ALERTAS URGENTES -->
+      <div class="alerts-block" id="dash-alerts"></div>
+
+      <!-- GASTOS QUINCENA -->
+      <div class="quincena-card">
+        <div class="qcard-title">💰 Esta Quincena</div>
+        <div class="qcard-grid" id="quincena-grid"></div>
+      </div>
+
+      <!-- ACCIONES INMEDIATAS -->
+      <div class="acciones-card" id="acciones-card">
+        <div class="acciones-title">⚡ Acciones Inmediatas</div>
+        <div id="acciones-list"></div>
+      </div>
+
+    </section>
+
+    <!-- ════════════════════════════ DEUDAS ════════════════════════════ -->
+    <section id="sec-deudas" class="section">
+      <div class="sec-header">
+        <h2>💳 Mis Deudas</h2>
+        <button class="btn-primary sm" onclick="openDebtModal()">+ Nueva</button>
+      </div>
+
+      <div class="debt-summary" id="debt-summary"></div>
+
+      <div id="debts-urgent" class="debt-group">
+        <div class="dg-label">🔴 URGENTES</div>
+        <div class="dg-list" id="list-urgent"></div>
+      </div>
+      <div id="debts-soon" class="debt-group">
+        <div class="dg-label">🟡 PRÓXIMAS</div>
+        <div class="dg-list" id="list-soon"></div>
+      </div>
+      <div id="debts-ok" class="debt-group">
+        <div class="dg-label">🟢 BAJO CONTROL</div>
+        <div class="dg-list" id="list-ok"></div>
+      </div>
+
+      <!-- CUOTAS ACTIVAS DE CUPOS USADOS -->
+      <div class="cuotas-section">
+        <div class="dg-label">📋 Cuotas Activas (Cupos Usados)</div>
+        <div id="cuotas-activas-list"></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════ GASTOS ════════════════════════════ -->
+    <section id="sec-gastos" class="section">
+      <div class="sec-header">
+        <h2>📝 Registrar</h2>
+        <div class="toggle-row">
+          <button class="toggle-btn active" id="tog-gasto" onclick="toggleGastoType('gasto')">Gasto</button>
+          <button class="toggle-btn" id="tog-ingreso" onclick="toggleGastoType('ingreso')">Ingreso Extra</button>
+        </div>
+      </div>
+
+      <!-- FORM GASTO -->
+      <div id="form-gasto" class="reg-form">
+        <div class="form-field">
+          <label>Categoría</label>
+          <div class="cat-grid" id="cat-grid">
+            <button class="cat-btn active" data-cat="comida" onclick="selectCat(this)">🍔 Comida</button>
+            <button class="cat-btn" data-cat="medicinas" onclick="selectCat(this)">💊 Medicinas</button>
+            <button class="cat-btn" data-cat="hormiga" onclick="selectCat(this)">🐜 Hormiga</button>
+            <button class="cat-btn" data-cat="servicios" onclick="selectCat(this)">💡 Servicios</button>
+            <button class="cat-btn" data-cat="transporte" onclick="selectCat(this)">🚗 Transporte</button>
+            <button class="cat-btn" data-cat="otro" onclick="selectCat(this)">📦 Otro</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Monto</label>
+            <input type="number" id="gasto-monto" class="form-input" placeholder="0" />
+          </div>
+          <div class="form-field">
+            <label>Fecha</label>
+            <input type="date" id="gasto-fecha" class="form-input" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Descripción (opcional)</label>
+          <input type="text" id="gasto-desc" class="form-input" placeholder="Ej: Almuerzo del trabajo" />
+        </div>
+        <button class="btn-primary full" onclick="registrarGasto()">Registrar Gasto</button>
+      </div>
+
+      <!-- FORM INGRESO EXTRA -->
+      <div id="form-ingreso" class="reg-form hidden">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Monto extra</label>
+            <input type="number" id="extra-monto" class="form-input" placeholder="0" />
+          </div>
+          <div class="form-field">
+            <label>Fecha disponible</label>
+            <input type="date" id="extra-fecha" class="form-input" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Origen</label>
+          <input type="text" id="extra-desc" class="form-input" placeholder="Ej: Bono, freelance, venta..." />
+        </div>
+        <div class="form-field">
+          <label>¿Cómo usarlo?</label>
+          <select id="extra-uso" class="form-input">
+            <option value="asesor">Que el asesor decida</option>
+            <option value="deuda">Pagar deuda prioritaria</option>
+            <option value="ahorro">Guardar en emergencias</option>
+            <option value="libre">Dinero libre</option>
+          </select>
+        </div>
+        <button class="btn-primary full" onclick="registrarExtra()">Agregar Ingreso Extra</button>
+      </div>
+
+      <!-- HISTORIAL HOY -->
+      <div class="historial-hoy">
+        <div class="h-title">📊 Hoy</div>
+        <div id="historial-hoy-list">
+          <div class="empty-msg">No hay registros hoy</div>
+        </div>
+      </div>
+
+      <!-- RESUMEN SEMANAL HORMIGA -->
+      <div class="hormiga-card" id="hormiga-weekly">
+        <div class="horm-title">🐜 Gastos Hormiga esta semana</div>
+        <div class="horm-bar-bg">
+          <div class="horm-bar-fill" id="horm-bar"></div>
+        </div>
+        <div class="horm-labels">
+          <span id="horm-usado">$0 usado</span>
+          <span id="horm-presup">de $0</span>
+        </div>
+        <div class="horm-insight" id="horm-insight"></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════ CALENDARIO ════════════════════════════ -->
+    <section id="sec-calendario" class="section">
+      <div class="sec-header">
+        <h2>📅 Calendario</h2>
+        <div class="month-nav">
+          <button class="icon-btn" onclick="changeMonth(-1)">◀</button>
+          <span id="cal-month-label">Mes</span>
+          <button class="icon-btn" onclick="changeMonth(1)">▶</button>
+        </div>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+      <div class="cal-events-list" id="cal-events-list"></div>
+    </section>
+
+    <!-- ════════════════════════════ METAS ════════════════════════════ -->
+    <section id="sec-metas" class="section">
+      <div class="sec-header">
+        <h2>🎯 Mis Metas</h2>
+        <button class="btn-primary sm" onclick="openMetaModal()">+ Nueva</button>
+      </div>
+      <div id="metas-list"></div>
+
+      <!-- TIMELINE LIBERTAD -->
+      <div class="timeline-section">
+        <div class="tl-title">🗺️ Tu Camino a la Libertad (Mes a mes)</div>
+        <div id="timeline-list"></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════ PROGRESO ════════════════════════════ -->
+    <section id="sec-progreso" class="section">
+      <div class="sec-header"><h2>📊 Mi Progreso</h2></div>
+
+      <!-- SCORE FINANCIERO -->
+      <div class="score-card">
+        <div class="score-circle" id="score-circle">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" class="score-bg-ring"/>
+            <circle cx="60" cy="60" r="50" class="score-fill-ring" id="score-ring"/>
+          </svg>
+          <div class="score-num" id="score-num">--</div>
+          <div class="score-label">Salud<br>Financiera</div>
+        </div>
+        <div class="score-breakdown" id="score-breakdown"></div>
+      </div>
+
+      <!-- GRÁFICO DEUDA EN EL TIEMPO -->
+      <div class="chart-card">
+        <div class="chart-title">📉 Deuda en el tiempo</div>
+        <canvas id="debt-chart" height="180"></canvas>
+      </div>
+
+      <!-- GRÁFICO DISTRIBUCIÓN GASTOS -->
+      <div class="chart-card">
+        <div class="chart-title">🍩 Distribución de Gastos</div>
+        <canvas id="gastos-chart" height="180"></canvas>
+      </div>
+
+      <!-- LOGROS -->
+      <div class="logros-section">
+        <div class="logros-title">🏆 Mis Logros</div>
+        <div id="logros-grid"></div>
+        <div class="racha-card">
+          <div class="racha-fire">🔥</div>
+          <div class="racha-info">
+            <div class="racha-num" id="racha-num">0 días</div>
+            <div class="racha-label">Sin atrasos consecutivos</div>
+          </div>
+          <div class="racha-record" id="racha-record">Récord: 0</div>
+        </div>
+      </div>
+
+      <!-- RESUMEN MENSUAL -->
+      <div class="resumen-mes" id="resumen-mes"></div>
+    </section>
+
+    <!-- ════════════════════════════ ALERTAS ════════════════════════════ -->
+    <section id="sec-alertas" class="section">
+      <div class="sec-header"><h2>🔔 Alertas</h2></div>
+      <div id="alertas-list"></div>
+    </section>
+
+    <!-- ════════════════════════════ SALUD MENTAL ════════════════════════════ -->
+    <section id="sec-bienestar" class="section">
+      <div class="sec-header"><h2>💚 Mi Bienestar</h2></div>
+
+      <div class="mood-history-card">
+        <div class="mh-title">Historial de ánimo</div>
+        <div id="mood-history"></div>
+      </div>
+
+      <div class="apoyo-card">
+        <div class="apoyo-title">💌 Mensajes de Apoyo</div>
+        <div id="apoyo-msg" class="apoyo-msg-text"></div>
+        <button class="btn-ghost" onclick="nextApoyoMsg()">Otro mensaje →</button>
+      </div>
+
+      <div class="stats-comunidad">
+        <div class="sc-title">👥 No estás solo</div>
+        <div class="sc-grid" id="sc-grid"></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════ ALTERNATIVAS ════════════════════════════ -->
+    <section id="sec-alternativas" class="section">
+      <div class="sec-header"><h2>🌐 Alternativas Financieras</h2></div>
+      <div class="alt-intro">
+        <p>Cuando el asesor detecta tasas altas, puede buscar mejores opciones en Colombia. <strong>Solo con tu permiso.</strong></p>
+      </div>
+
+      <div class="alt-permission-card" id="alt-permission-card">
+        <div class="alt-perm-icon">🌐</div>
+        <div class="alt-perm-title">Buscar alternativas en bancos colombianos</div>
+        <div class="alt-perm-desc" id="alt-perm-desc">El asesor analizará tu situación y buscará tasas más convenientes.</div>
+        <button class="btn-primary" onclick="iniciarBusquedaAlternativas()">Permitir búsqueda</button>
+        <button class="btn-ghost" onclick="cancelarBusqueda()">Ahora no</button>
+      </div>
+
+      <div class="alt-results" id="alt-results"></div>
+    </section>
+
+    <!-- ════════════════════════════ MODO CRISIS ════════════════════════════ -->
+    <section id="sec-crisis" class="section">
+      <div class="sec-header"><h2>🆘 Modo Crisis</h2></div>
+
+      <div class="crisis-status" id="crisis-status">
+        <div class="cs-icon">✅</div>
+        <div class="cs-text">Todo bajo control. No estás en modo crisis.</div>
+        <button class="btn-danger" onclick="activateCrisisMode()">Activar Modo Crisis</button>
+      </div>
+
+      <div class="crisis-active hidden" id="crisis-active">
+        <div class="crisis-banner">🚨 MODO CRISIS ACTIVO</div>
+        <div class="crisis-plan" id="crisis-plan"></div>
+        <button class="btn-ghost" onclick="deactivateCrisisMode()">Desactivar Modo Crisis</button>
+      </div>
+
+      <div class="simulador-section">
+        <div class="sim-title">🎮 Simulador: ¿Qué pasa si...?</div>
+        <div class="sim-grid">
+          <div class="sim-scenario" onclick="runScenario('income_drop')">
+            <span>📉</span>
+            <span>Ingreso cae 50%</span>
+          </div>
+          <div class="sim-scenario" onclick="runScenario('expense_hit')">
+            <span>💸</span>
+            <span>Imprevisto $500K</span>
+          </div>
+          <div class="sim-scenario" onclick="runScenario('bonus')">
+            <span>🎁</span>
+            <span>Bono $1,000K</span>
+          </div>
+          <div class="sim-scenario" onclick="runScenario('extra_payment')">
+            <span>⚡</span>
+            <span>Pago extra mes</span>
+          </div>
+        </div>
+        <div class="sim-result hidden" id="sim-result"></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════ CONFIGURACIÓN ════════════════════════════ -->
+    <section id="sec-config" class="section">
+      <div class="sec-header"><h2>⚙️ Configuración</h2></div>
+
+      <div class="config-group">
+        <div class="cg-title">👤 Perfil</div>
+        <div class="form-field">
+          <label>Nombre</label>
+          <input type="text" id="cfg-name" class="form-input" />
+        </div>
+        <div class="form-field">
+          <label>Moneda</label>
+          <select id="cfg-currency" class="form-input">
+            <option value="COP">COP (Pesos Colombianos)</option>
+            <option value="USD">USD</option>
+            <option value="MXN">MXN</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="cg-title">💵 Ingresos Quincenales</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Quincena 1 (1–15)</label>
+            <input type="number" id="cfg-q1" class="form-input" placeholder="0" />
+          </div>
+          <div class="form-field">
+            <label>Quincena 2 (16–30)</label>
+            <input type="number" id="cfg-q2" class="form-input" placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="cg-title">🏠 Gastos Fijos Mensuales</div>
+        <div id="cfg-fixed-list"></div>
+        <button class="btn-ghost" onclick="addCfgFixed()">+ Agregar gasto fijo</button>
+      </div>
+
+      <div class="config-group">
+        <div class="cg-title">📊 Presupuestos Mensuales</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>🍔 Comida</label>
+            <input type="number" id="cfg-budget-comida" class="form-input" placeholder="0" />
+          </div>
+          <div class="form-field">
+            <label>🐜 Hormiga</label>
+            <input type="number" id="cfg-budget-hormiga" class="form-input" placeholder="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>💊 Medicinas</label>
+            <input type="number" id="cfg-budget-medicinas" class="form-input" placeholder="0" />
+          </div>
+          <div class="form-field">
+            <label>🆘 Emergencias</label>
+            <input type="number" id="cfg-budget-emergencia" class="form-input" placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary full" onclick="saveConfig()">Guardar Configuración ✅</button>
+
+      <div class="config-group danger-zone">
+        <div class="cg-title">💾 Datos</div>
+        <button class="btn-ghost full" onclick="exportData()">📥 Exportar datos (JSON)</button>
+        <button class="btn-ghost full" onclick="importData()">📤 Importar datos (JSON)</button>
+        <button class="btn-danger full" onclick="resetApp()">🗑️ Resetear todo</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-sec="dashboard" onclick="openSection('dashboard')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Inicio</span>
+    </button>
+    <button class="nav-btn" data-sec="deudas" onclick="openSection('deudas')">
+      <span class="nav-icon">💳</span>
+      <span class="nav-label">Deudas</span>
+    </button>
+    <button class="nav-btn" data-sec="gastos" onclick="openSection('gastos')">
+      <span class="nav-icon">📝</span>
+      <span class="nav-label">Registrar</span>
+    </button>
+    <button class="nav-btn" data-sec="progreso" onclick="openSection('progreso')">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Progreso</span>
+    </button>
+    <button class="nav-btn" data-sec="metas" onclick="openSection('metas')">
+      <span class="nav-icon">🎯</span>
+      <span class="nav-label">Metas</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ═══════════════ MODALES ═══════════════ -->
+
+<!-- MODAL DEUDA -->
+<div id="modal-deuda" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="debt-modal-title">💳 Nueva Deuda</h3>
+      <button class="modal-close" onclick="closeModal('modal-deuda')">✕</button>
+    </div>
+    <input type="hidden" id="debt-edit-id" />
+    <div class="form-field">
+      <label>Acreedor (Nombre del banco o persona)</label>
+      <input type="text" id="debt-acreedor" class="form-input" placeholder="Ej: Visa Bancolombia" />
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Tipo</label>
+        <select id="debt-tipo" class="form-input">
+          <option value="tarjeta">💳 Tarjeta de Crédito</option>
+          <option value="prestamo">🏦 Préstamo Personal</option>
+          <option value="hipoteca">🏠 Hipoteca</option>
+          <option value="persona">👤 Persona Natural</option>
+          <option value="otro">📦 Otro</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Tasa anual (%)</label>
+        <input type="number" id="debt-tasa" class="form-input" placeholder="24" step="0.1" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Saldo actual</label>
+        <input type="number" id="debt-saldo" class="form-input" placeholder="0" />
+      </div>
+      <div class="form-field">
+        <label>Cupo disponible</label>
+        <input type="number" id="debt-cupo" class="form-input" placeholder="0 (si aplica)" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Cuota mínima mensual</label>
+        <input type="number" id="debt-cuota" class="form-input" placeholder="0" />
+      </div>
+      <div class="form-field">
+        <label>Fecha próximo pago</label>
+        <input type="date" id="debt-fecha" class="form-input" />
+      </div>
+    </div>
+    <div class="form-field">
+      <label>Notas (opcional)</label>
+      <input type="text" id="debt-notas" class="form-input" placeholder="Ej: Tasa negociada, aplazada hasta..." />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-deuda')">Cancelar</button>
+      <button class="btn-primary" onclick="saveDebt()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL META -->
+<div id="modal-meta" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🎯 Nueva Meta</h3>
+      <button class="modal-close" onclick="closeModal('modal-meta')">✕</button>
+    </div>
+    <input type="hidden" id="meta-edit-id" />
+    <div class="form-field">
+      <label>Nombre de la meta</label>
+      <input type="text" id="meta-nombre" class="form-input" placeholder="Ej: Estar sin deudas" />
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Tipo</label>
+        <select id="meta-tipo" class="form-input">
+          <option value="deuda">💳 Pagar deuda</option>
+          <option value="ahorro">💰 Ahorrar</option>
+          <option value="habito">🌱 Hábito</option>
+          <option value="otro">🎯 Otro</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Meta ($)</label>
+        <input type="number" id="meta-target" class="form-input" placeholder="0" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Progreso actual ($)</label>
+        <input type="number" id="meta-actual" class="form-input" placeholder="0" />
+      </div>
+      <div class="form-field">
+        <label>Fecha límite</label>
+        <input type="date" id="meta-fecha" class="form-input" />
+      </div>
+    </div>
+    <div class="form-field">
+      <label>Emoji</label>
+      <input type="text" id="meta-emoji" class="form-input" placeholder="🎯" maxlength="2" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-meta')">Cancelar</button>
+      <button class="btn-primary" onclick="saveMeta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAR DEUDA -->
+<div id="modal-pagar" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>✅ Registrar Pago</h3>
+      <button class="modal-close" onclick="closeModal('modal-pagar')">✕</button>
+    </div>
+    <input type="hidden" id="pagar-debt-id" />
+    <div class="pagar-info" id="pagar-info"></div>
+    <div class="form-field">
+      <label>Monto pagado</label>
+      <input type="number" id="pagar-monto" class="form-input" placeholder="0" />
+    </div>
+    <div class="form-field">
+      <label>Fecha de pago</label>
+      <input type="date" id="pagar-fecha" class="form-input" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-pagar')">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarPago()">Confirmar Pago ✅</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL USAR CUPO -->
+<div id="modal-cupo" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>💳 Usar Cupo Estratégicamente</h3>
+      <button class="modal-close" onclick="closeModal('modal-cupo')">✕</button>
+    </div>
+    <div class="cupo-asesor-msg" id="cupo-asesor-msg"></div>
+    <input type="hidden" id="cupo-debt-id" />
+    <div class="form-field">
+      <label>Monto a usar del cupo</label>
+      <input type="number" id="cupo-monto" class="form-input" placeholder="0" oninput="recalcCupo()" />
+    </div>
+    <div class="form-field">
+      <label>Número de cuotas para pagar</label>
+      <select id="cupo-cuotas" class="form-input" onchange="recalcCupo()">
+        <option value="1">1 cuota</option>
+        <option value="2" selected>2 cuotas</option>
+        <option value="3">3 cuotas</option>
+        <option value="4">4 cuotas</option>
+        <option value="6">6 cuotas</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Destino</label>
+      <select id="cupo-destino" class="form-input">
+        <option value="comida">🍔 Comida</option>
+        <option value="medicinas">💊 Medicinas</option>
+        <option value="imprevisto">🆘 Imprevisto</option>
+        <option value="deuda">💳 Pagar otra deuda</option>
+        <option value="otro">📦 Otro</option>
+      </select>
+    </div>
+    <div class="cupo-preview" id="cupo-preview"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-cupo')">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarUsoCupo()">Confirmar y Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÁNIMO -->
+<div id="modal-mood" class="modal-overlay hidden">
+  <div class="modal-box mood-box">
+    <h3>¿Cómo te sientes hoy?</h3>
+    <div class="mood-grid">
+      <button class="mood-btn" onclick="registerMood(1)"><span>😰</span>Muy ansioso</button>
+      <button class="mood-btn" onclick="registerMood(2)"><span>😟</span>Ansioso</button>
+      <button class="mood-btn" onclick="registerMood(3)"><span>😐</span>Normal</button>
+      <button class="mood-btn" onclick="registerMood(4)"><span>😊</span>Bien</button>
+      <button class="mood-btn" onclick="registerMood(5)"><span>🎉</span>Excelente</button>
+    </div>
+    <button class="btn-ghost" onclick="closeModal('modal-mood')">Ahora no</button>
+  </div>
+</div>
+
+<!-- MODAL ASESOR DÉFICIT -->
+<div id="modal-deficit" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🤖 Asesor — Plan para el Déficit</h3>
+      <button class="modal-close" onclick="closeModal('modal-deficit')">✕</button>
+    </div>
+    <div id="deficit-plan-content"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-deficit')">Cerrar</button>
+      <button class="btn-primary" id="deficit-accept-btn">Aceptar Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LOGRO DESBLOQUEADO -->
+<div id="modal-logro" class="modal-overlay hidden">
+  <div class="modal-box logro-box">
+    <div class="logro-anim">🏆</div>
+    <h3>¡Logro Desbloqueado!</h3>
+    <div class="logro-name" id="logro-name"></div>
+    <div class="logro-desc" id="logro-desc"></div>
+    <button class="btn-primary" onclick="closeModal('modal-logro')">¡Genial! 🎉</button>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
