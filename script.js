@@ -2076,3 +2076,140 @@ document.addEventListener('click', (e) => {
     closeMasMenu();
   }
 });
+
+// ═══════════════════════════════════════════
+// FIX CRÍTICO: GUARDADO AUTOMÁTICO DE DATOS
+// ═══════════════════════════════════════════
+
+// GUARDADO AUTOMÁTICO CADA 5 SEGUNDOS
+setInterval(() => {
+  try {
+    localStorage.setItem('cp_state', JSON.stringify(STATE));
+  } catch(e) {
+    console.error('Auto-save failed:', e);
+  }
+}, 5000);
+
+// GUARDADO AL CERRAR PÁGINA/NAVEGADOR
+window.addEventListener('beforeunload', () => {
+  try {
+    localStorage.setItem('cp_state', JSON.stringify(STATE));
+    localStorage.setItem('cp_last_save', new Date().toISOString());
+  } catch(e) {
+    console.error('Final save failed:', e);
+  }
+});
+
+// VERIFICAR MODO INCÓGNITO/PRIVADO
+function checkPrivateMode() {
+  const test = '__ls_test__';
+  try {
+    localStorage.setItem(test, test);
+    localStorage.removeItem(test);
+    return false; // No es privado, localStorage funciona
+  } catch(e) {
+    console.warn('⚠️ ADVERTENCIA: Estás en Modo Incógnito/Privado');
+    console.warn('Los datos NO se guardarán cuando cierres el navegador');
+    return true; // Es privado, localStorage no funciona
+  }
+}
+
+// VERIFICAR AL CARGAR
+window.addEventListener('load', () => {
+  const isPrivate = checkPrivateMode();
+  if (isPrivate) {
+    setTimeout(() => {
+      showToast('⚠️ MODO PRIVADO: Datos no se guardarán al cerrar');
+    }, 2000);
+  }
+});
+
+// GUARDAR DESPUÉS DE CADA ACCIÓN IMPORTANTE
+// Wrapper para saveState que guarda CON CONFIRMACIÓN
+const originalSaveState = saveState;
+window.saveState = function() {
+  try {
+    localStorage.setItem('cp_state', JSON.stringify(STATE));
+    localStorage.setItem('cp_last_save', new Date().toISOString());
+    return true;
+  } catch(e) {
+    console.error('Save error:', e);
+    showToast('❌ Error al guardar datos');
+    return false;
+  }
+};
+
+// CARGAR CON VALIDACIÓN
+const originalLoadData = loadData;
+window.loadData = function() {
+  try {
+    const raw = localStorage.getItem('cp_state');
+    if (raw) {
+      const d = JSON.parse(raw);
+      STATE = { ...STATE, ...d };
+      console.log('✅ Datos cargados correctamente');
+      return true;
+    } else {
+      console.log('ℹ️ Sin datos guardados (primera vez)');
+      return false;
+    }
+  } catch(e) {
+    console.error('Load error:', e);
+    showToast('❌ Error al cargar datos guardados');
+    return false;
+  }
+};
+
+// VERIFICAR INTEGRIDAD DE DATOS
+function verifyDataIntegrity() {
+  if (!STATE) {
+    console.error('❌ STATE está undefined');
+    return false;
+  }
+  if (!STATE.debts) STATE.debts = [];
+  if (!STATE.expenses) STATE.expenses = [];
+  if (!STATE.cuotas) STATE.cuotas = [];
+  if (!STATE.config) STATE.config = {};
+  console.log('✅ Integridad de datos verificada');
+  return true;
+}
+
+// EXPORTAR DATOS (PARA BACKUP MANUAL)
+function exportData() {
+  const data = JSON.stringify(STATE, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ControlPeso_Backup_${today()}.json`;
+  a.click();
+  showToast('📥 Datos exportados correctamente');
+}
+
+// IMPORTAR DATOS (PARA RESTAURAR BACKUP)
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      STATE = { ...STATE, ...data };
+      saveState();
+      showToast('✅ Datos importados correctamente');
+      location.reload();
+    } catch(err) {
+      showToast('❌ Error al importar datos');
+      console.error('Import error:', err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// INICIALIZAR CORRECTAMENTE AL CARGAR
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🔄 Inicializando ControlPeso...');
+  verifyDataIntegrity();
+  loadData();
+  console.log('✅ Carga completada');
+});
+
+console.log('✅ Sistema de guardado automático ACTIVADO');
